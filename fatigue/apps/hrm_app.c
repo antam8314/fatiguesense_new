@@ -49,7 +49,7 @@ static uint64_t peaks[PEAK_WINDOW];
 static int peakIndex;
 static uint64_t time;
 
-static uint32_t inputFromSensor;
+static uint16_t inputFromSensor;
 
 // HRV variables
 static double MeanRR;
