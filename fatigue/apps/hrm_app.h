@@ -41,6 +41,7 @@
 #define HRM_DEMO_VERSION "1.0.0"
 
 #define MS_IN_MINUTE 60000
+#define SEC_IN_MINUTE 60
 
 #define Q15_SBIT    0x8000
 #define Q15_MBITS   0x7FFF

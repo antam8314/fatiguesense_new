@@ -68,6 +68,11 @@ q15_t magFFT[PPG_SAMPLES/2];
 static q15_t ppg_data[PPG_SAMPLES];
 static q15_t hanning_window[PPG_SAMPLES];
 
+// variables for respiratory rate
+static float respRate;
+static float respIntensity;
+static bool respFatigue;
+
 #ifdef TESTING
 
 // test data vars
@@ -307,6 +312,13 @@ void hrm_calculate_mean_rr(void)
  *****************************************************************************/
 void hrm_calculate_resp_rate(void)
 {
+  // 100Hz sample rate / 1024 bins = 0.09765625Hz per bin
+  float binWidth = 100/PPG_SAMPLES;
+  q15_t hanning_window[PPG_SAMPLES];
+  q15_t max = 0;
+  uint32_t maxIndex = 0;
+
+
   arm_mult_q15(ppg_data, hanning_window, ppg_data, PPG_SAMPLES);
 
   arm_rfft_q15(&S, ppg_data, complexFFT);
@@ -324,12 +336,26 @@ void hrm_calculate_resp_rate(void)
   printf("\n");
 #endif
 
-  // find peaks for resp rate and heart rate
+  // find peak for resp rate
+  arm_max_q15(magFFT, PPG_SAMPLES/2, &max, &maxIndex);
+  respRate = binWidth * maxIndex * SEC_IN_MINUTE;
+  respIntensity = q15_to_f(max);
 
+#ifdef TESTING
+  printf("Max of %i at %li | Resp Rate: %f breaths per minute\n", max, maxIndex, respRate);
+#endif
 
+  // TODO - thresholds
+  if (respRate > 25.0 && respIntensity < 100.0)
+    respFatigue = true;
+  else
+    respFatigue = false;
 
+#ifdef TESTING
+  printf("Resp Fatigued: %i\n", respFatigue);
+#endif
 
-  return;
+    return;
 }
 
 /**************************************************************************//**
