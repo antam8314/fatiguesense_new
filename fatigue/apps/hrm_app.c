@@ -66,7 +66,6 @@ arm_status fftStatus;
 q15_t complexFFT[PPG_SAMPLES * 2];
 q15_t magFFT[PPG_SAMPLES/2];
 static q15_t ppg_data[PPG_SAMPLES];
-static q15_t hanning_window[PPG_SAMPLES];
 
 // variables for respiratory rate
 static float respRate;
@@ -100,10 +99,6 @@ void hrm_init_app(void)
   // Init FFT
   fftStatus = ARM_MATH_SUCCESS;
   fftStatus = arm_rfft_init_q15(&S, PPG_SAMPLES, 0, 1);
-
-  for (int i = 0; i < PPG_SAMPLES; i++) {
-    hanning_window[i] = f_to_q15(0.5 * (1 - arm_cos_f32(2 * PI * i / PPG_SAMPLES )));
-  }
 
 #ifdef TESTING
   if (fftStatus != ARM_MATH_SUCCESS)
@@ -318,6 +313,9 @@ void hrm_calculate_resp_rate(void)
   q15_t max = 0;
   uint32_t maxIndex = 0;
 
+  for (int i = 0; i < PPG_SAMPLES; i++) {
+    hanning_window[i] = f_to_q15(0.5 * (1 - arm_cos_f32(2 * PI * i / PPG_SAMPLES )));
+  }
 
   arm_mult_q15(ppg_data, hanning_window, ppg_data, PPG_SAMPLES);
 
