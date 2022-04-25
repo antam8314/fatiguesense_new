@@ -49,6 +49,7 @@
 #define Q15_NMAX    0x8000
 
 #define TESTING 1
+//#undef TESTING
 
 #include <stdlib.h>
 #include <stdint.h>

@@ -10,7 +10,7 @@
 *
 ******************************************************************************/
 #include <fatigue/apps/hrm_app.h>
-
+#include <app.h>
 
 // for respiratory rate
 #include "arm_math.h"
@@ -48,6 +48,8 @@ static int ppgCnt;
 static uint64_t peaks[PEAK_WINDOW];
 static int peakIndex;
 static uint64_t time;
+
+static uint32_t inputFromSensor;
 
 // HRV variables
 static double MeanRR;
@@ -114,7 +116,6 @@ void hrm_process_input(void)
 #endif
 {
   peak_t input;
-  uint16_t inputFromSensor;
   uint16_t smoothAverage;
   bool sensorReady = false;
 
@@ -133,7 +134,7 @@ void hrm_process_input(void)
 
 #else
   // ***Sensor input here***
-
+  // sensor input captured in hrm_loop()
 #endif
 
   smoothSum = smoothSum - smoothReadings[smoothIndex];
@@ -216,6 +217,40 @@ void hrm_loop(void)
                                                  0);
 #else
   //*****Sensor interface here*****
+
+  uint16_t data[] = {0, 0}; // to hold read register data
+  uint16_t irq = 0;
+
+  // check INT_DATA_A - interrupt status and control register - indicates data
+  //    to be read
+  // INT_STATUS_DATA bit 0 INT_DATA_A - Time Slot A data register interrupt
+  //                                    status
+  // cleared automatically on reg read if INT_ACLEAR_DATA_A is set (default)
+  adpd4100_reg_read(0x0001,&irq);
+
+  // we only care about bit 0
+  irq = (irq & 0x1);
+
+  // if the interrupt is flagged
+  if (irq == 1) {
+
+    // set HOLD_REGS_A = 1
+    // DATA_HOLD_FLAG bit 0 HOLD_REGS_A - Prevent update of Time Slot A data registers.
+    // 1  hold contents
+    adpd4100_reg_write(0x002E,0x1);
+
+    // Once it's set, read the data register directly
+    // 0x30 SIGNAL1_L_A - signal 1 ch 1 lower half
+    // 0x31 SIGNAL1_H_A - signal 1 ch 1 upper half
+    adpd4100_reg_read(0x0030,&data[0]);
+    adpd4100_reg_read(0x0031,&data[1]);
+
+    // set OLD_REGS_A = 0
+    adpd4100_reg_write(0x002E,0x0);
+
+    // grab latest ppg value
+    inputFromSensor = data[0] + (data[1] << 16);
+  }
 
   hrm_process_input();
 #endif

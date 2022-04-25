@@ -31,6 +31,46 @@
 	</natures>
 	<linkedResources>
 		<link>
+			<name>BSP/bsp_bcc.c</name>
+			<type>1</type>
+			<locationURI>STUDIO_SDK_LOC/hardware/kit/common/bsp/bsp_bcc.c</locationURI>
+		</link>
+		<link>
+			<name>BSP/bsp_dk_3200.c</name>
+			<type>1</type>
+			<locationURI>STUDIO_SDK_LOC/hardware/kit/common/bsp/bsp_dk_3200.c</locationURI>
+		</link>
+		<link>
+			<name>BSP/bsp_dk_3201.c</name>
+			<type>1</type>
+			<locationURI>STUDIO_SDK_LOC/hardware/kit/common/bsp/bsp_dk_3201.c</locationURI>
+		</link>
+		<link>
+			<name>BSP/bsp_dk_leds.c</name>
+			<type>1</type>
+			<locationURI>STUDIO_SDK_LOC/hardware/kit/common/bsp/bsp_dk_leds.c</locationURI>
+		</link>
+		<link>
+			<name>BSP/bsp_dk_mcuboard.c</name>
+			<type>1</type>
+			<locationURI>STUDIO_SDK_LOC/hardware/kit/common/bsp/bsp_dk_mcuboard.c</locationURI>
+		</link>
+		<link>
+			<name>BSP/bsp_stk.c</name>
+			<type>1</type>
+			<locationURI>STUDIO_SDK_LOC/hardware/kit/common/bsp/bsp_stk.c</locationURI>
+		</link>
+		<link>
+			<name>BSP/bsp_stk_leds.c</name>
+			<type>1</type>
+			<locationURI>STUDIO_SDK_LOC/hardware/kit/common/bsp/bsp_stk_leds.c</locationURI>
+		</link>
+		<link>
+			<name>BSP/bsp_trace.c</name>
+			<type>1</type>
+			<locationURI>STUDIO_SDK_LOC/hardware/kit/common/bsp/bsp_trace.c</locationURI>
+		</link>
+		<link>
 			<name>DSP/arm_abs_f32.c</name>
 			<type>1</type>
 			<locationURI>STUDIO_SDK_LOC/platform/CMSIS/DSP_Lib/Source/BasicMathFunctions/arm_abs_f32.c</locationURI>
