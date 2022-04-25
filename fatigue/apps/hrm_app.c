@@ -64,6 +64,7 @@ arm_status fftStatus;
 q15_t complexFFT[PPG_SAMPLES * 2];
 q15_t magFFT[PPG_SAMPLES/2];
 static q15_t ppg_data[PPG_SAMPLES];
+static q15_t hanning_window[PPG_SAMPLES];
 
 #ifdef TESTING
 
@@ -92,6 +93,10 @@ void hrm_init_app(void)
   // Init FFT
   fftStatus = ARM_MATH_SUCCESS;
   fftStatus = arm_rfft_init_q15(&S, PPG_SAMPLES, 0, 1);
+
+  for (int i = 0; i < PPG_SAMPLES; i++) {
+    hanning_window[i] = f_to_q15(0.5 * (1 - arm_cos_f32(2 * PI * i / PPG_SAMPLES )));
+  }
 
 #ifdef TESTING
   if (fftStatus != ARM_MATH_SUCCESS)
@@ -236,13 +241,17 @@ void hrm_calculate_mean_rr(void)
 
   MeanRR = (double)sum / (double)(PEAK_WINDOW - 1 - rejected);
 
+#ifdef TESTING
+  printf("MeanRR: %f | Thresh: %f\n", MeanRR, (50.0/MeanRR));
+#endif
+
   for (int i = 0; i < PEAK_WINDOW - 1; i++) {
     //50ms divided by the average RR gives the % variability threshold
     if (fabs(((double)(peaks[i+1] - peaks[i]) / MeanRR)-1.0) < (50.0/MeanRR))
       count++;
 
 #ifdef TESTING
-    printf("RR: %"PRIu64" | MeanRR: %f | Abs: %f | Thresh: %f\n", (peaks[i+1] - peaks[i]), MeanRR, fabs(((double)(peaks[i+1] - peaks[i]) / MeanRR)-1.0), (50.0/MeanRR));
+    printf("RR: %"PRIu64" | Abs: %f | Count: %i\n", (peaks[i+1] - peaks[i]), fabs(((double)(peaks[i+1] - peaks[i]) / MeanRR)-1.0), count);
 #endif
   }
 
@@ -263,20 +272,15 @@ void hrm_calculate_mean_rr(void)
  *****************************************************************************/
 void hrm_calculate_resp_rate(void)
 {
-  q15_t hanning_window[PPG_SAMPLES];
-  for (int i = 0; i < PPG_SAMPLES; i++) {
-    hanning_window[i] = f_to_q15(0.5 * (1 - arm_cos_f32(2 * PI * i / PPG_SAMPLES )));
-  }
-
   arm_mult_q15(ppg_data, hanning_window, ppg_data, PPG_SAMPLES);
 
   arm_rfft_q15(&S, ppg_data, complexFFT);
 
   // magnitude function returns amplitude (squared function for power)
-  arm_cmplx_mag_q15(complexFFT, magFFT, PPG_SAMPLES/2+1);
+  arm_cmplx_mag_q15(complexFFT, magFFT, PPG_SAMPLES/2);
 
   // remove DC
-  // magFFT[0] = 0;
+  magFFT[0] = 0;
 
 #ifdef TESTING
   for (int i = 0; i < PPG_SAMPLES/2; i++) {

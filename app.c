@@ -152,7 +152,9 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
     case sl_bt_evt_connection_closed_id:
       /* Service disconnect handlers */
       heart_rate_disconnect_event(evt);
-      //pulse_oximeter_disconnect_event(evt);
+      fatigue_disconnect_event(evt);
+      galvanic_skin_response_disconnect_event(evt);
+      respiratory_rate_disconnect_event(evt);
       device_information_disconnect_event(evt);
       connection_handle = 0xff;
 
