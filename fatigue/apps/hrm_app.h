@@ -107,6 +107,20 @@ bool hrm_get_hrv_fatigue(void);
 uint64_t get_time_ms(void);
 
 /**************************************************************************//**
+ * @brief This function returns the current respiratory rate.
+ *****************************************************************************/
+uint16_t hrm_get_resp_rate(void);
+
+/**************************************************************************//**
+ * @brief This function returns the current respiratory intensity.
+ *****************************************************************************/
+uint16_t hrm_get_resp_intensity(void);
+
+/**************************************************************************//**
+ * @brief This function returns the Respiratory Fatigue indication status
+ *****************************************************************************/
+bool hrm_get_resp_fatigue(void);
+/**************************************************************************//**
  * @brief Convert float to q15
  *****************************************************************************/
 int16_t f_to_q15 (float f);

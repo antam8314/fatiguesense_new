@@ -29,11 +29,19 @@
 // defines for fft
 #define PPG_SAMPLES 1024
 
+// 100Hz sample rate / 1024 bins = 0.09765625Hz per bin
+#define BIN_WIDTH 0.09765625
+
 // defines for HRV
 #define PEAK_WINDOW 20
 
-//defines for smoothing
+// defines for smoothing
 #define SMOOTHING_WINDOW 15
+
+// defines for resp rate
+#define RESP_AVG_WINDOW 10
+#define RESP_FATIGUE_THRESHOLD 25
+#define RESP_INTENSITY_THRESHOLD 0.05
 
 typedef struct
 {
@@ -66,11 +74,14 @@ arm_status fftStatus;
 q15_t complexFFT[PPG_SAMPLES * 2];
 q15_t magFFT[PPG_SAMPLES/2];
 static q15_t ppg_data[PPG_SAMPLES];
+static q15_t hanning_window[PPG_SAMPLES];
 
 // variables for respiratory rate
-static float respRate;
-static float respIntensity;
+static double respRate;
+static q15_t respIntensity[RESP_AVG_WINDOW];
 static bool respFatigue;
+static int respCnt;
+static float avgRespIntensity;
 
 #ifdef TESTING
 
@@ -99,6 +110,11 @@ void hrm_init_app(void)
   // Init FFT
   fftStatus = ARM_MATH_SUCCESS;
   fftStatus = arm_rfft_init_q15(&S, PPG_SAMPLES, 0, 1);
+
+  for (int i = 0; i < PPG_SAMPLES; i++) {
+    hanning_window[i] = f_to_q15(0.5 * (1 - arm_cos_f32(2 * PI * i / PPG_SAMPLES )));
+  }
+
 
 #ifdef TESTING
   if (fftStatus != ARM_MATH_SUCCESS)
@@ -307,15 +323,9 @@ void hrm_calculate_mean_rr(void)
  *****************************************************************************/
 void hrm_calculate_resp_rate(void)
 {
-  // 100Hz sample rate / 1024 bins = 0.09765625Hz per bin
-  float binWidth = 100/PPG_SAMPLES;
-  q15_t hanning_window[PPG_SAMPLES];
   q15_t max = 0;
+  q15_t mean = 0;
   uint32_t maxIndex = 0;
-
-  for (int i = 0; i < PPG_SAMPLES; i++) {
-    hanning_window[i] = f_to_q15(0.5 * (1 - arm_cos_f32(2 * PI * i / PPG_SAMPLES )));
-  }
 
   arm_mult_q15(ppg_data, hanning_window, ppg_data, PPG_SAMPLES);
 
@@ -336,15 +346,26 @@ void hrm_calculate_resp_rate(void)
 
   // find peak for resp rate
   arm_max_q15(magFFT, PPG_SAMPLES/2, &max, &maxIndex);
-  respRate = binWidth * maxIndex * SEC_IN_MINUTE;
-  respIntensity = q15_to_f(max);
+
+  respIntensity[respCnt] = max;
+  respRate = (double)BIN_WIDTH * (double)maxIndex * (double)SEC_IN_MINUTE;
 
 #ifdef TESTING
-  printf("Max of %i at %li | Resp Rate: %f breaths per minute\n", max, maxIndex, respRate);
+  printf("Max of %i at %li | Resp Rate: %i breaths per minute\n", max, maxIndex, (uint16_t)respRate);
 #endif
 
+  respCnt++;
+  if (respCnt == RESP_AVG_WINDOW) {
+    respCnt = 0;
+    arm_mean_q15(respIntensity, RESP_AVG_WINDOW, &mean);
+    avgRespIntensity = q15_to_f(mean);
+#ifdef TESTING
+    printf("Resp Intensity: %f\n", avgRespIntensity);
+#endif
+  }
+
   // TODO - thresholds
-  if (respRate > 25.0 && respIntensity < 100.0)
+  if (respRate > RESP_FATIGUE_THRESHOLD && avgRespIntensity < RESP_INTENSITY_THRESHOLD)
     respFatigue = true;
   else
     respFatigue = false;
@@ -362,7 +383,7 @@ void hrm_calculate_resp_rate(void)
 uint16_t hrm_get_heart_rate(void)
 {
   // MeanRR in ms
-  return (uint16_t)(MS_IN_MINUTE / MeanRR);
+  return (uint16_t)((double)MS_IN_MINUTE / MeanRR);
 }
 
 /**************************************************************************//**
@@ -380,6 +401,35 @@ uint16_t hrm_get_heart_rate_mean_rr(void)
 bool hrm_get_hrv_fatigue(void)
 {
   return HRVFatigue;
+}
+
+/**************************************************************************//**
+ * @brief This function returns the current respiratory rate.
+ *****************************************************************************/
+uint16_t hrm_get_resp_rate(void)
+{
+  return (uint16_t)(respRate);
+}
+
+/**************************************************************************//**
+ * @brief This function returns the current respiratory intensity.
+ *****************************************************************************/
+uint16_t hrm_get_resp_intensity(void)
+{
+  if (avgRespIntensity < RESP_INTENSITY_THRESHOLD)
+    // indicate shallow breathing
+    return 1;
+  else
+    // indicate normal breathing
+    return 0;
+}
+
+/**************************************************************************//**
+ * @brief This function returns the Respiratory Fatigue indication status
+ *****************************************************************************/
+bool hrm_get_resp_fatigue(void)
+{
+  return respFatigue;
 }
 
 /**************************************************************************//**

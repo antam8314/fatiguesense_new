@@ -145,7 +145,10 @@ void fatigue_characteristic_status(sl_bt_msg_t *evt)
 {
   uint8_t send_data[1];
 
-  send_data[0] = 0;
+  service_data.fatigued_hr_mean_rr = hrm_get_hrv_fatigue();
+  service_data.fatigued_resp_rate = hrm_get_resp_fatigue();
+
+  send_data[0] = (service_data.fatigued_hr_mean_rr || service_data.fatigued_resp_rate);
   
   // Notification or Indication status changed for Fatigue Indicator
   if (evt->data.evt_gatt_server_characteristic_status.characteristic
