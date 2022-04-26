@@ -123,7 +123,7 @@
     <!--Respiratory Rate Measurement-->
     <characteristic const="false" id="respiratory_rate_measurement" name="Respiratory Rate Measurement" sourceId="" uuid="e1eb67a5-9a8a-4ad2-890b-9b6b3d510487">
       <informativeText/>
-      <value length="4" type="hex" variable_length="false">00</value>
+      <value length="3" type="hex" variable_length="false">00</value>
       <properties>
         <notify authenticated="false" bonded="false" encrypted="false"/>
       </properties>

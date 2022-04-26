@@ -41,7 +41,6 @@
 // defines for resp rate
 #define RESP_AVG_WINDOW 10
 #define RESP_FATIGUE_THRESHOLD 25
-#define RESP_INTENSITY_THRESHOLD 0.05
 
 typedef struct
 {
@@ -78,10 +77,11 @@ static q15_t hanning_window[PPG_SAMPLES];
 
 // variables for respiratory rate
 static double respRate;
-static q15_t respIntensity[RESP_AVG_WINDOW];
+static q15_t respIntensityData[RESP_AVG_WINDOW];
 static bool respFatigue;
 static int respCnt;
 static float avgRespIntensity;
+static float respIntensity;
 
 #ifdef TESTING
 
@@ -347,7 +347,8 @@ void hrm_calculate_resp_rate(void)
   // find peak for resp rate
   arm_max_q15(magFFT, PPG_SAMPLES/2, &max, &maxIndex);
 
-  respIntensity[respCnt] = max;
+  respIntensityData[respCnt] = max;
+  respIntensity = q15_to_f(max);
   respRate = (double)BIN_WIDTH * (double)maxIndex * (double)SEC_IN_MINUTE;
 
 #ifdef TESTING
@@ -357,7 +358,7 @@ void hrm_calculate_resp_rate(void)
   respCnt++;
   if (respCnt == RESP_AVG_WINDOW) {
     respCnt = 0;
-    arm_mean_q15(respIntensity, RESP_AVG_WINDOW, &mean);
+    arm_mean_q15(respIntensityData, RESP_AVG_WINDOW, &mean);
     avgRespIntensity = q15_to_f(mean);
 #ifdef TESTING
     printf("Resp Intensity: %f\n", avgRespIntensity);
@@ -365,7 +366,7 @@ void hrm_calculate_resp_rate(void)
   }
 
   // TODO - thresholds
-  if (respRate > RESP_FATIGUE_THRESHOLD && avgRespIntensity < RESP_INTENSITY_THRESHOLD)
+  if (respRate > RESP_FATIGUE_THRESHOLD && respIntensity < 0.66 * avgRespIntensity)
     respFatigue = true;
   else
     respFatigue = false;
@@ -416,7 +417,7 @@ uint16_t hrm_get_resp_rate(void)
  *****************************************************************************/
 uint8_t hrm_get_resp_intensity(void)
 {
-  if (avgRespIntensity < RESP_INTENSITY_THRESHOLD)
+  if (respIntensity < 0.66 * avgRespIntensity)
     // indicate shallow breathing
     return 1;
   else
