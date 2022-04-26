@@ -94,7 +94,7 @@ uint16_t hrm_get_heart_rate(void);
 /**************************************************************************//**
  * @brief This function returns the current mean rr.
  *****************************************************************************/
-uint16_t hrm_get_heart_rate_mean_rr(void);
+uint16_t hrm_get_heart_rate_variability(void);
 
 /**************************************************************************//**
  * @brief This function returns the HRV Fatigue indication status

@@ -175,7 +175,7 @@ void heart_rate_characteristic_status(sl_bt_msg_t *evt)
   send_data[1] = service_data.heart_rate_measurement & 0xff;
   send_data[2] = (service_data.heart_rate_measurement >> 8) & 0xff;
 
-  service_data.heart_rate_mean_rr = hrm_get_heart_rate_mean_rr();
+  service_data.heart_rate_mean_rr = hrm_get_heart_rate_variability();
   send_data[3] = service_data.heart_rate_mean_rr & 0xff;
   send_data[4] = (service_data.heart_rate_mean_rr >> 8) & 0xff;
   
@@ -221,7 +221,7 @@ void heart_rate_send_new_data(uint8_t connect)
   send_data[1] = service_data.heart_rate_measurement & 0xff;
   send_data[2] = (service_data.heart_rate_measurement >> 8) & 0xff;
 
-  service_data.heart_rate_mean_rr = hrm_get_heart_rate_mean_rr();
+  service_data.heart_rate_mean_rr = hrm_get_heart_rate_variability();
   send_data[3] = service_data.heart_rate_mean_rr & 0xff;
   send_data[4] = (service_data.heart_rate_mean_rr >> 8) & 0xff;
 

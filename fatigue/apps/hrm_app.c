@@ -61,6 +61,7 @@ static uint16_t inputFromSensor;
 // HRV variables
 static double MeanRR;
 static bool HRVFatigue;
+static double hrv;
 
 // variables for pulse detection
 static peak_t prevInput;
@@ -184,14 +185,19 @@ void hrm_process_input(void)
     // peak detection
     if (input.value < prevInput.value && prevInput.value > threshold && (input.time - lastPeak.time) > (MS_IN_MINUTE / 150)) {
       // previous value was peak
+      if (MeanRR != 0) {
+        hrv = fabs(((double)(prevInput.time - lastPeak.time) / MeanRR)-1.0) * 100;
+      }
+
+#ifdef TESTING
+      printf("Peak value: %i at time: %" PRIu64 " | Variability %lf | Index %i\n", prevInput.value, prevInput.time, hrv, peakIndex);
+#endif
+      peaks[peakIndex] = prevInput.time;
+      peakIndex++;
+
       lastPeak.value = prevInput.value;
       lastPeak.time = prevInput.time;
 
-      peaks[peakIndex] = prevInput.time;
-#ifdef TESTING
-      printf("Peak value: %i at time: %" PRIu64 " | index %i\n", prevInput.value, prevInput.time, peakIndex);
-#endif
-      peakIndex++;
 
       // call Mean RR calc when peak window full
       if (peakIndex == PEAK_WINDOW) {
@@ -390,10 +396,10 @@ uint16_t hrm_get_heart_rate(void)
 /**************************************************************************//**
  * @brief This function returns the current mean rr.
  *****************************************************************************/
-uint16_t hrm_get_heart_rate_mean_rr(void)
+uint16_t hrm_get_heart_rate_variability(void)
 {
-  // MeanRR in ms, convert to sec * 1024
-  return (uint16_t)((MeanRR / 1000.0) * 1024.0);
+  // HRV as a percent * scalar
+  return (uint16_t)(hrv * 1024.0);
 }
 
 /**************************************************************************//**
