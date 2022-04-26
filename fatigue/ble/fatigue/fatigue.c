@@ -186,8 +186,10 @@ void fatigue_send_new_data(uint8_t connect)
 {
   uint8_t send_data[1];
 
-  //service_data.heart_rate_measurement = (uint16_t)hrm_get_heart_rate();
-  send_data[0] = 1;
+  service_data.fatigued_hr_mean_rr = hrm_get_hrv_fatigue();
+  service_data.fatigued_resp_rate = hrm_get_resp_fatigue();
+
+  send_data[0] = (service_data.fatigued_hr_mean_rr || service_data.fatigued_resp_rate);
 
   if (notifications_enabled == true) {
      sl_bt_gatt_server_send_notification(connect,
