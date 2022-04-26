@@ -414,7 +414,7 @@ uint16_t hrm_get_resp_rate(void)
 /**************************************************************************//**
  * @brief This function returns the current respiratory intensity.
  *****************************************************************************/
-uint16_t hrm_get_resp_intensity(void)
+uint8_t hrm_get_resp_intensity(void)
 {
   if (avgRespIntensity < RESP_INTENSITY_THRESHOLD)
     // indicate shallow breathing

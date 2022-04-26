@@ -48,7 +48,7 @@
 #include <stdio.h>
 
 #define ATT_WRITE_NOT_PERMITTED 0x03
-#define FLAG_BITS 1<<4
+#define FLAG_BITS 0b00010001
 
 /*******************************************************************************
  *******************************   DEFINES   ***********************************
@@ -167,17 +167,17 @@ void heart_rate_disconnect_event(sl_bt_msg_t *evt)
  ******************************************************************************/
 void heart_rate_characteristic_status(sl_bt_msg_t *evt)
 {
-  uint8_t send_data[4];
+  uint8_t send_data[5];
   
   send_data[0] = FLAG_BITS; //flags - set HR to uint8, no sensor status, no EE, RR interval bit to 1
 
   service_data.heart_rate_measurement = hrm_get_heart_rate();
   send_data[1] = service_data.heart_rate_measurement & 0xff;
-  //send_data[2] = (service_data.heart_rate_measurement >> 8) & 0xff;
+  send_data[2] = (service_data.heart_rate_measurement >> 8) & 0xff;
 
   service_data.heart_rate_mean_rr = hrm_get_heart_rate_mean_rr();
-  send_data[2] = service_data.heart_rate_mean_rr & 0xff;
-  send_data[3] = (service_data.heart_rate_mean_rr >> 8) & 0xff;
+  send_data[3] = service_data.heart_rate_mean_rr & 0xff;
+  send_data[4] = (service_data.heart_rate_mean_rr >> 8) & 0xff;
   
   // Notification or Indication status changed for Heart Rate Measurement
   if (evt->data.evt_gatt_server_characteristic_status.characteristic
@@ -192,7 +192,7 @@ void heart_rate_characteristic_status(sl_bt_msg_t *evt)
       sl_bt_gatt_server_send_notification(
            evt->data.evt_gatt_server_characteristic_status.connection,
            evt->data.evt_gatt_server_characteristic_status.characteristic,
-           4,
+           5,
            send_data);
       notifications_enabled = true;
     }
@@ -213,23 +213,23 @@ void heart_rate_characteristic_status(sl_bt_msg_t *evt)
  ******************************************************************************/
 void heart_rate_send_new_data(uint8_t connect)
 {
-  uint8_t send_data[4];
+  uint8_t send_data[5];
 
   send_data[0] = FLAG_BITS; //flags - set HR to uint8, no sensor status, no EE, RR interval bit to 1
 
   service_data.heart_rate_measurement = hrm_get_heart_rate();
   send_data[1] = service_data.heart_rate_measurement & 0xff;
-  //send_data[2] = (service_data.heart_rate_measurement >> 8) & 0xff;
+  send_data[2] = (service_data.heart_rate_measurement >> 8) & 0xff;
 
   service_data.heart_rate_mean_rr = hrm_get_heart_rate_mean_rr();
-  send_data[2] = service_data.heart_rate_mean_rr & 0xff;
-  send_data[3] = (service_data.heart_rate_mean_rr >> 8) & 0xff;
+  send_data[3] = service_data.heart_rate_mean_rr & 0xff;
+  send_data[4] = (service_data.heart_rate_mean_rr >> 8) & 0xff;
 
 
   if (notifications_enabled == true) {
      sl_bt_gatt_server_send_notification(connect,
                                          gattdb_heart_rate_measurement,
-                                         4,
+                                         5,
                                          send_data);
   }
 }
