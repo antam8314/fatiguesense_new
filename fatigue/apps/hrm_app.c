@@ -10,7 +10,10 @@
 *
 ******************************************************************************/
 #include <fatigue/apps/hrm_app.h>
+
+#ifdef SENSOR
 #include <fatigue/sensor/sensor.h>
+#endif
 
 // for respiratory rate
 #include "arm_math.h"
