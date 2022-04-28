@@ -10,7 +10,7 @@
 *
 ******************************************************************************/
 #include <fatigue/apps/hrm_app.h>
-#include <app.h>
+#include <fatigue/sensor/sensor.h>
 
 // for respiratory rate
 #include "arm_math.h"
@@ -84,7 +84,7 @@ static int respCnt;
 static float avgRespIntensity;
 static float respIntensity;
 
-#ifdef TESTING
+#ifndef SENSOR
 
 // test data vars
 extern int TEST_PPG_LENGTH;
@@ -126,7 +126,7 @@ void hrm_init_app(void)
 /**************************************************************************//**
  * @brief callback from timer to process data
  *****************************************************************************/
-#ifdef TESTING
+#ifndef SENSOR
 void hrm_process_input(sl_sleeptimer_timer_handle_t *handle, void *data)
 #else
 void hrm_process_input(void)
@@ -138,7 +138,7 @@ void hrm_process_input(void)
 
   time = get_time_ms();
 
-#ifdef TESTING
+#ifndef SENSOR
   //printf("Loop start time: %" PRIu64 "\n", time);
 
   // use test dataset input
@@ -164,7 +164,7 @@ void hrm_process_input(void)
   input.value = smoothAverage;
   input.time = time;
 
-#ifdef TESTING
+#ifndef SENSOR
   //printf("Sample value: %f at time: %" PRIu64 "\n", inputFromSensor, time);
   //printf("Sample value: %f\n", smoothAverage);
 
@@ -230,7 +230,7 @@ void hrm_process_input(void)
  *****************************************************************************/
 void hrm_loop(void)
 {
-#ifdef TESTING
+#ifndef SENSOR
   timerStatus = sl_sleeptimer_start_periodic_timer_ms(&timer_10ms,
                                                  timer_timeout,
                                                  hrm_process_input,

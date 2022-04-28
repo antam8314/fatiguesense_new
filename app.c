@@ -35,6 +35,7 @@
 * Silicon Labs may update projects from time to time.
 ******************************************************************************/
 #include <fatigue/apps/hrm_app.h>
+#include <fatigue/sensor/sensor.h>
 #include <fatigue/ble/config/app_timer.h>
 #include <fatigue/ble/config/ble_att_handler.h>
 #include <fatigue/ble/device_information/device_information.h>
@@ -47,6 +48,9 @@
 #include "sl_bluetooth.h"
 #include "gatt_db.h"
 #include "app.h"
+
+//#define SENSOR
+#undef SENSOR
 
 static void services_init(void);
 
@@ -64,6 +68,11 @@ SL_WEAK void app_init(void)
   // Put your additional application init code here!                         //
   // This is called once during start-up.                                    //
   /////////////////////////////////////////////////////////////////////////////
+#ifdef SENSOR
+  initGPIO();
+  initUSART0();
+  initADPD4100();
+#endif
   hrm_init_app();
   services_init();
 }

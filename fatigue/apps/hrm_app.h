@@ -49,7 +49,10 @@
 #define Q15_PMAX    0x7FFF
 #define Q15_NMAX    0x8000
 
-#define TESTING 1
+#define TESTING
+//#undef TESTING
+//#define SENSOR
+#undef SENSOR
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -70,7 +73,7 @@ void hrm_loop(void);
 /**************************************************************************//**
  * @brief callback from timer to process data
  *****************************************************************************/
-#ifdef TESTING
+#ifndef SENSOR
 void hrm_process_input(sl_sleeptimer_timer_handle_t *handle, void *data);
 #else
 void hrm_process_input(void);

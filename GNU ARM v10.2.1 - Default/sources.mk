@@ -16,7 +16,6 @@ C_DEPS :=
 
 # Every subdirectory with source files must be described here
 SUBDIRS := \
-BSP \
 DSP \
 . \
 autogen \
@@ -27,6 +26,7 @@ fatigue/ble/fatigue \
 fatigue/ble/gsr \
 fatigue/ble/heart_rate \
 fatigue/ble/respiratory_rate \
+fatigue/sensor \
 gecko_sdk_4.0.2/app/bluetooth/common/ota_dfu \
 gecko_sdk_4.0.2/app/bluetooth/common/simple_timer \
 gecko_sdk_4.0.2/hardware/board/src \
