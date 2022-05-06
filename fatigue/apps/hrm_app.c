@@ -246,11 +246,11 @@ void hrm_loop(void)
   uint16_t data[] = {0, 0}; // to hold read register data
   uint16_t irq = 0;
 
-  // check INT_DATA_A - interrupt status and control register - indicates data
-  //    to be read
+  // Check INT_DATA_A - interrupt status and control register - indicates data
+  //    to be read, cleared automatically on reg read if INT_ACLEAR_DATA_A is
+  //    set (default)
   // INT_STATUS_DATA bit 0 INT_DATA_A - Time Slot A data register interrupt
   //                                    status
-  // cleared automatically on reg read if INT_ACLEAR_DATA_A is set (default)
   adpd4100_reg_read(0x0001,&irq);
 
   // we only care about bit 0
@@ -259,12 +259,13 @@ void hrm_loop(void)
   // if the interrupt is flagged
   if (irq == 1) {
 
-    // set HOLD_REGS_A = 1
-    // DATA_HOLD_FLAG bit 0 HOLD_REGS_A - Prevent update of Time Slot A data registers.
-    // 1  hold contents
+    // Set HOLD_REGS_A = 1.
+    // DATA_HOLD_FLAG bit 0 HOLD_REGS_A - Prevent update of Time Slot A data
+    //                                    registers.
+    //    1  hold contents
     adpd4100_reg_write(0x002E,0x1);
 
-    // Once it's set, read the data register directly
+    // Once it's set, read the data register directly.
     // 0x30 SIGNAL1_L_A - signal 1 ch 1 lower half
     // 0x31 SIGNAL1_H_A - signal 1 ch 1 upper half
     adpd4100_reg_read(0x0030,&data[0]);

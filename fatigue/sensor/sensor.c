@@ -81,7 +81,8 @@ void initUSART0(void)
   USART_InitSync_TypeDef init = USART_INITSYNC_DEFAULT;
 
   init.msbf = true;   // MSB first transmission for SPI compatibility
-  init.baudrate = 50000;  // change from 1 Mbps to 10 Kbps
+  init.baudrate = 50000;  // change from 1 Mbps to 50 Kbps due to limitations
+                          //  of opamp doing level shifting on CIPO
 
   /*
    * Route USART0 RX, TX, and CLK to the specified pins.  Note that CS is
@@ -119,109 +120,129 @@ void initADPD4100(void) {
       r = adpd4100_reg_read(0x8,&deviceid);
   }
 
-    // OSC_32M_FREQ_ADJ bits 0-7 - High frequency oscillator frequency control
-    adpd4100_reg_write(0x9,0x80); // default
+  // set typical default ADPD4100 configuration [1]
 
-    // OSC_1M_FREQ_ADJ bits 0-9 - Low frequency oscillator frequency control
-    // 1MHz trim - trim your own clock
-    adpd4100_reg_write(0xB,0x2b2); //default
+  // OSC_32M_FREQ_ADJ bits 0-7 - High frequency oscillator frequency control
+  adpd4100_reg_write(0x9,0x80); // default
 
-    // OSC_32K_ADJUST bits 0-5 - 32 kHzoscillator trim
-    adpd4100_reg_write(0xC,0x12); // default
+  // OSC_1M_FREQ_ADJ bits 0-9 - Low frequency oscillator frequency control
+  // 1MHz trim - trim your own clock
+  adpd4100_reg_write(0xB,0x2b2); //default
 
-    // OSC_32K_ADJUST TS_FREQ bits 0-15 TIMESLOT_PERIOD_L
-    //  - Lower 16 bits of time slot period in low frequency oscillator cycles.
-    //  100 Hz
-    r = adpd4100_reg_write(0xD,0x2710); // default
+  // OSC_32K_ADJUST bits 0-5 - 32 kHzoscillator trim
+  adpd4100_reg_write(0xC,0x12); // default
 
-    //  enable 1MHz osc
-    adpd4100_reg_write(0xF,0x6);
+  // OSC_32K_ADJUST TS_FREQ bits 0-15 TIMESLOT_PERIOD_L
+  //  - Lower 16 bits of time slot period in low frequency oscillator cycles.
+  adpd4100_reg_write(0xD,0x2710); // 100 Hz, default
 
-    // One timeslot active: A
-    adpd4100_reg_write(0x10,0x0);
+  //  enable 1MHz osc
+  adpd4100_reg_write(0xF,0x6);
 
-    // in1 connected to vc1 during sleep, everything else floating
-    adpd4100_reg_write(0x20,0x4);
+  // One timeslot active: A
+  adpd4100_reg_write(0x10,0x0);
 
-    // default:     "0021 0000 // all inputs single ended, vc1 set to Vdd during
-    //              sleep",
+  // in1 connected to vc1 during sleep, everything else floating
+  adpd4100_reg_write(0x20,0x4);
 
-    // gpio0 is output, inverted
-    adpd4100_reg_write(0x22,0x3);
+  // all inputs single ended, vc1 set to Vdd during sleep
+  adpd4100_reg_write(0x21,0x0); // default
 
-    // GPIO01 bits 0-6 GPIOOUT0 - GPIO0 output signal select
-    // 0x2 - Interrupt X
-    adpd4100_reg_write(0x23,0x2);
+  // gpio0 is output, inverted
+  adpd4100_reg_write(0x22,0x3);
 
-    // INT_ENABLE_XD bit 15 INTX_EN_FIFO_TH - INT_FIFO_TH interrupt enable.
-    //    Write a 1 to this bit to enable drive of the FIFO threshold status on
-    //    Interrupt X.
-    adpd4100_reg_write(0x14,0x8000);
+  // GPIO01 bits 0-6 GPIOOUT0 - GPIO0 output signal select
+  // 0x2 - Interrupt X
+  adpd4100_reg_write(0x23,0x2);
 
-    //      "// timeslot A - continuous connect mode - green PPG",
-    //
-    //      "0100 0000 // Rin = 500, tsA offset = 0, skip subsample",
-    // TS_CTRL_A bits 10-11 INPUT_R_SELECT_A[1:0] - Input resistor (R IN ) select.
-    // default
+  // INT_ENABLE_XD bit 15 INTX_EN_FIFO_TH - INT_FIFO_TH interrupt enable.
+  //    Write a 1 to this bit to enable drive of the FIFO threshold status on
+  //    Interrupt X.
+  adpd4100_reg_write(0x14,0x8000);
 
-    //      "0101 40DA // path = TIA + BPF + INT + ADC", // default
+  // timeslot A - continuous connect mode - green PPG
 
-    //      "0102 0001 // IN1 to channel 1, others disconnected",
-    adpd4100_reg_write(0x102,0x1);
+  // TS_CTRL_A bits 10-11 INPUT_R_SELECT_A[1:0] - Input resistor (R IN ) select
+  // Rin = 500, tsA offset = 0, skip subsample
+  adpd4100_reg_write(0x100,0x0);    // default
 
-    //      "0103 5002 // precondition inputs to TIA_Vref, VC1 active state = V_delta",
-    // CATHODE_A
-    //    bits 0-1 VC1_SEL_x - VC1 active state for Time Slot x.
-    //    10b    TIA_VREF + 215mV
-    //    bits 12-14 PRECON_x - Precondition value for enabled inputs during Time Slot x.
-    //    101: precondition with TIA_VREF
-    adpd4100_reg_write(0x103,0x5002);
+  // path = TIA + BPF + INT + ADC
+  adpd4100_reg_write(0x101,0x40DA);   // default
 
-    //      "0104 03C0 // Rf = 200k Rint = 400k",
-    //  AFE_TRIM_VREF_x:    11: TIA_VREF = 1.265 V.
-    //  VREF_PULSE_VAL_x:   11: modulate TIA_VREF = 1.265 V.
-    adpd4100_reg_write(0x104,0x3c0);
+  // IN1 to channel 1, others disconnected
+  adpd4100_reg_write(0x102,0x1);
 
-    //      "0105 0707 // 11 mA on LED1A, 2A, 3A",
-    adpd4100_reg_write(0x105,0x707);
-    adpd4100_reg_write(0x106,0x7);
+  // precondition inputs to TIA_Vref, VC1 active state = V_delta
+  // CATHODE_A
+  //    bits 0-1 VC1_SEL_x - VC1 active state for Time Slot x.
+  //        10b    TIA_VREF + 215mV
+  //    bits 12-14 PRECON_x - Precondition value for enabled inputs during Time Slot x.
+  //        101: precondition with TIA_VREF
+  adpd4100_reg_write(0x103,0x5002);
 
-    //      "0107 0140 // 64 pulses",
-    adpd4100_reg_write(0x107,0x140);
+  //  AFE_TRIM_VREF_x:    11: TIA_VREF = 1.265 V.
+  //  VREF_PULSE_VAL_x:   11: modulate TIA_VREF = 1.265 V.
+  //  0x104 AFE_TRIM_A
+  //    12-11 CH1_TRIM_INT_x
+  //    9-8   AFE_TRIM_VREF_x
+  //    7-6   VREF_PULSE_VAL_x
+  //    2-0   TIA_GAIN_CH1_x
+  // Set to 0x03C0 = 0000 0011 1100 0000 for Rf = 200k Rint = 400k
+  // To lower gain from 200k/400k = 0.5 to 0.25,
+  //  set to 0000 0011 1100 0001 = 0x3C1
+  adpd4100_reg_write(0x104,0x3c1);
 
-    //      "0108 0000 // period set by automatic period of continuous connect mode", // default
+  // 11 mA on LED1A, 2A, 3A
+  //adpd4100_reg_write(0x105,0x707);
+  //adpd4100_reg_write(0x106,0x7);
 
-    //      "0109 0210 // led width= 2us led offset=16 us",
-    adpd4100_reg_write(0x109,0x210);
+  // Reducing the LED amperage to avoid saturating TIA and/or ADC
+  // 8 mA on LED1A, 2A, 3A
+  adpd4100_reg_write(0x105,0x505);
+  adpd4100_reg_write(0x106,0x5);
 
-    // b11 integrator width=3 us // default
-    // INTEG_SETUP_A bits 6-7 ADC_COUNT_x - ADC conversions per pulse =
-    //      ADC_COUNT_x + 1
-    //adpd4100_reg_write(0x10a,0x3);
+  // 64 pulses
+  adpd4100_reg_write(0x107,0x140);
 
-    //      "010B 0210 // integrator offset=16.5 us - ADJUST FINE OFFSET",
-    adpd4100_reg_write(0x10b,0x210);
+  // period set by automatic period of continuous connect mode
+  adpd4100_reg_write(0x108,0x0);  // default
 
-    //      "010C 0001 // no modulation",
-    adpd4100_reg_write(0x10c,0x1);
+  // led width= 2us led offset=16 us
+  adpd4100_reg_write(0x109,0x210);
 
-    //      "0110 0003 // signal size = 3 bytes",
-    adpd4100_reg_write(0x110,0x3);
 
-    //      "010D 0099 // -++- int pattern",
-    adpd4100_reg_write(0x10d,0x99);
+  // INTEG_SETUP_A bits 6-7 ADC_COUNT_x - ADC conversions per pulse =
+  //      ADC_COUNT_x + 1
+  //          b11 integrator width=3 us
+  adpd4100_reg_write(0x10a,0x3);  // default
 
-    // all default below
-    //      "010E 0000 // NO OFFSET - review if needed",
-    //      "010F 0000 // NO OFFSET - review if needed",
-    //      "0112 0000 // no decimation",
+  // integrator offset=16.5 us - ADJUST FINE OFFSET
+  adpd4100_reg_write(0x10b,0x210);
 
-    // ------------- Initialization complete ---------------
-    // start operations
-    // OPMODE bit 0 - operating mode selection
-    // 0  standby
-    // 1  go mode (operate selected time slots)
-    adpd4100_reg_write(0x10,0x1);
+  // no modulation
+  adpd4100_reg_write(0x10c,0x1);
+
+  // signal size = 3 bytes
+  adpd4100_reg_write(0x110,0x3);
+
+  // -++- int pattern
+  adpd4100_reg_write(0x10d,0x99);
+
+  // NO OFFSET - review if needed
+  adpd4100_reg_write(0x10E,0x0);    // default
+
+  // NO OFFSET - review if needed
+  adpd4100_reg_write(0x10F,0x0);    // default
+
+  // no decimation
+  adpd4100_reg_write(0x112,0x0);    // default
+
+  // ------------- Initialization complete ---------------
+  // start operations
+  // OPMODE bit 0 - operating mode selection
+  // 0  standby
+  // 1  go mode (operate selected time slots)
+  adpd4100_reg_write(0x10,0x1);
 
 }
 
@@ -276,12 +297,6 @@ uint8_t adpd4100_reg_read(uint16_t address, uint16_t *data) {
   // temporary buffer for translating incoming data
   uint8_t buff[] = { 0, 0 };
 
-  /*
-   * Eliminate unused variable warning so that inbug can be observed
-   * in the debugger.
-   */
-  //(void)inbuf;
-
   // Zero incoming buffer and outgoing data array
   for (i = 0; i < bytes; i++)
   {
@@ -302,10 +317,8 @@ uint8_t adpd4100_reg_read(uint16_t address, uint16_t *data) {
   outbuf[1] = (address << 1) & LOWERBYTE_MASK;
   outbuf[0] = (address & UPPERBYTE_MASK) >> find_first_set_bit(UPPERBYTE_MASK);
 
-
   // Assert chip select (drive low)
   GPIO_PinOutClear(US0CS_PORT, US0CS_PIN);
-
 
   /*
    * Because this example is most likely going to be running with
@@ -371,7 +384,7 @@ uint8_t adpd4100_reg_write(uint16_t address, uint16_t data) {
   uint8_t outbuf[bytes];    // Outgoing data
   uint8_t inbuf[bytes];     // Incoming data
 
-  //uint8_t buff[] = { 0, 0, 0, 0 };    // temporary buffer for translating data
+  uint8_t buff[] = { 0, 0, 0, 0 };    // temporary buffer for translating data
 
   /*
    * Eliminate unused variable warning so that inbug can be observed
@@ -404,7 +417,6 @@ uint8_t adpd4100_reg_write(uint16_t address, uint16_t data) {
 
   // Assert chip select (drive low)
   GPIO_PinOutClear(US0CS_PORT, US0CS_PIN);
-
 
   /*
    * Because this example is most likely going to be running with
@@ -456,7 +468,6 @@ uint8_t adpd4100_reg_write(uint16_t address, uint16_t data) {
   //    out 2 bytes:  address of reg to read
   //    in  2 bytes:  value of reg (should match value to write)
   adpd4100_reg_read(address,&testdata);
-
 
   if (testdata == data) {
       r = 0;
